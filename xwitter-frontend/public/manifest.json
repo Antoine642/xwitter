@@ -1,0 +1,15 @@
+{
+  "name": "Xwitter",
+  "short_name": "Xwitter",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#007bff",
+  "background_color": "#ffffff",
+
+  "cache": [
+    "index.html",
+    "index.js",
+    "App.css",
+    "manifest.json"
+  ]
+}
