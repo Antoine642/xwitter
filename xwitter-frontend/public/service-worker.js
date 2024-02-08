@@ -10,7 +10,6 @@ const APP_SHELL_FILES = [
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
     '/favicon.ico',
     '/static/css/main.37c779ab.css',
-    '/static/js/592.f8361079.chunk.js',
     '/static/js/main.1eb774e9.js'
 ];
 
@@ -56,7 +55,7 @@ self.addEventListener('fetch', function (event) {
 
             console.log('Cache miss for', event.request.url);
             return fetch(event.request).then(function (networkResponse) {
-                if (event.request.url.includes('http://localhost:5000/messages')) {
+                if (event.request.url.includes('http://localhost:5000/messages') && event.request.method === 'GET') {
                     return caches.open(DYNAMIC_CACHE_NAME).then(function (cache) {
                         cache.put(event.request, networkResponse.clone());
                         return networkResponse;
@@ -75,38 +74,4 @@ self.addEventListener('fetch', function (event) {
             });
         })
     );
-});
-
-self.addEventListener('messages', function (event) {
-    if (event.data && event.data.action === 'cacheMessage') {
-        const { message } = event.data;
-
-        caches.open(DYNAMIC_CACHE_NAME).then(function (cache) {
-            cache.put(new Request('http://localhost:5000/messages'), new Response(JSON.stringify(message)));
-        });
-    }
-
-    if (event.data && event.data.action === 'clearDynamicCache') {
-        caches.open(DYNAMIC_CACHE_NAME).then(function (cache) {
-            cache.delete(new Request('http://localhost:5000/messages'));
-        });
-    }
-});
-
-self.addEventListener('online', function (event) {
-    console.log('Connection restored, processing pending messages...');
-    while (messageQueue.length > 0) {
-        const newMessage = messageQueue.shift();
-        fetch('http://localhost:5000/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newMessage)
-        }).then(function (response) {
-            console.log('Message sent successfully:', newMessage);
-        }).catch(function (error) {
-            console.error('Failed to send message:', error);
-        });
-    }
 });
