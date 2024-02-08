@@ -1,5 +1,7 @@
-const STATIC_CACHE_NAME = 'xwitter-static';
-const DYNAMIC_CACHE_NAME = 'xwitter-dynamic';
+const STATIC_CACHE = 'xwitter-static';
+const DYNAMIC_CACHE = 'xwitter-dynamic';
+
+const BACKEND_URL = 'http://localhost:5000/messages';
 
 // Liste des fichiers de l'application shell
 const APP_SHELL_FILES = [
@@ -10,18 +12,22 @@ const APP_SHELL_FILES = [
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
     '/favicon.ico',
     '/static/css/main.37c779ab.css',
-    '/static/js/main.1eb774e9.js'
+    '/static/css/main.37c779ab.css.map',
+    '/static/js/main.1eb774e9.js.map',
+    '/static/js/main.1eb774e9.js',
+    '/static/js/592.f8361079.chunk.js',
+    '/static/js/592.f8361079.chunk.js.map'
 ];
 
 self.addEventListener('install', function (event) {
     console.log('Service Worker installing...');
     event.waitUntil(
         Promise.all([
-            caches.open(STATIC_CACHE_NAME).then(function (cache) {
+            caches.open(STATIC_CACHE).then(function (cache) {
                 return cache.addAll(APP_SHELL_FILES);
             }),
-            caches.open(DYNAMIC_CACHE_NAME).then(function (cache) {
-                return cache.add(new Request('http://localhost:5000/messages'));
+            caches.open(DYNAMIC_CACHE).then(function (cache) {
+                return cache.add(new Request(BACKEND_URL));
             })
         ])
     );
@@ -34,8 +40,8 @@ self.addEventListener('activate', function (event) {
             caches.keys().then(function (cacheNames) {
                 return Promise.all(
                     cacheNames.filter(function (cacheName) {
-                        return cacheName !== STATIC_CACHE_NAME &&
-                            cacheName !== DYNAMIC_CACHE_NAME;
+                        return cacheName !== STATIC_CACHE &&
+                            cacheName !== DYNAMIC_CACHE;
                     }).map(function (cacheName) {
                         return caches.delete(cacheName);
                     })
@@ -52,11 +58,10 @@ self.addEventListener('fetch', function (event) {
                 console.log('Cache hit for', event.request.url);
                 return response;
             }
-
             console.log('Cache miss for', event.request.url);
             return fetch(event.request).then(function (networkResponse) {
-                if (event.request.url.includes('http://localhost:5000/messages') && event.request.method === 'GET') {
-                    return caches.open(DYNAMIC_CACHE_NAME).then(function (cache) {
+                if (event.request.url.includes(BACKEND_URL) && event.request.method === 'GET') {
+                    return caches.open(DYNAMIC_CACHE).then(function (cache) {
                         cache.put(event.request, networkResponse.clone());
                         return networkResponse;
                     });
@@ -74,4 +79,22 @@ self.addEventListener('fetch', function (event) {
             });
         })
     );
+});
+
+self.addEventListener('online', function (event) {
+    console.log('Connection restored, processing pending messages...');
+    while (messageQueue.length > 0) {
+        const newMessage = messageQueue.shift();
+        fetch(BACKEND_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newMessage)
+        }).then(function (response) {
+            console.log('Message sent successfully:', newMessage);
+        }).catch(function (error) {
+            console.error('Failed to send message:', error);
+        });
+    }
 });
