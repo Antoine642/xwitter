@@ -9,17 +9,6 @@ function App() {
 
   useEffect(() => {
     fetchMessages();
-    // Configurer l'écoute des Server-Sent Events
-    const eventSource = new EventSource('http://localhost:5000/events');
-    eventSource.onmessage = (event) => {
-      const newMessage = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-    };
-
-    // Nettoyer l'écouteur lorsque le composant est démonté
-    return () => {
-      eventSource.close();
-    };
   }, []);
 
   const fetchMessages = async () => {
@@ -32,7 +21,7 @@ function App() {
     await axios.post('http://localhost:5000/messages', { name, message });
     setName('');
     setMessage('');
-    // Pas besoin de recharger les messages ici car ils seront mis à jour via SSE
+    fetchMessages();
   };
 
   return (
