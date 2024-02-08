@@ -53,29 +53,29 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
     event.respondWith(
-        caches.match(event.request).then(function (response) {
-            if (response) {
-                console.log('Cache hit for', event.request.url);
-                return response;
-            }
-            console.log('Cache miss for', event.request.url);
-            return fetch(event.request).then(function (networkResponse) {
-                if (event.request.url.includes(BACKEND_URL) && event.request.method === 'GET') {
-                    return caches.open(DYNAMIC_CACHE).then(function (cache) {
-                        cache.put(event.request, networkResponse.clone());
-                        return networkResponse;
-                    });
-                } else {
+        fetch(event.request).then(function (networkResponse) {
+            console.log('Network response for', event.request.url);
+            if (event.request.url.includes(BACKEND_URL) && event.request.method === 'GET') {
+                return caches.open(DYNAMIC_CACHE).then(function (cache) {
+                    cache.put(event.request, networkResponse.clone());
                     return networkResponse;
-                }
-            }).catch(function (error) {
-                console.error('Fetch failed:', error);
-                return caches.match(event.request).then(function (cacheResponse) {
-                    return cacheResponse || new Response('Offline', {
+                });
+            } else {
+                return networkResponse;
+            }
+        }).catch(function (error) {
+            console.error('Fetch failed:', error);
+            return caches.match(event.request).then(function (cacheResponse) {
+                if (cacheResponse) {
+                    console.log('Cache hit for', event.request.url);
+                    return cacheResponse;
+                } else {
+                    console.log('Cache miss for', event.request.url);
+                    return new Response('Offline', {
                         status: 503,
                         statusText: 'Service Unavailable'
                     });
-                });
+                }
             });
         })
     );
