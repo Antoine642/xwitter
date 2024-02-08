@@ -1,4 +1,3 @@
-const CACHE_NAME = 'xwitter-cache';
 const STATIC_CACHE_NAME = 'xwitter-static';
 const DYNAMIC_CACHE_NAME = 'xwitter-dynamic';
 
@@ -36,8 +35,7 @@ self.addEventListener('activate', function (event) {
             caches.keys().then(function (cacheNames) {
                 return Promise.all(
                     cacheNames.filter(function (cacheName) {
-                        return cacheName !== CACHE_NAME &&
-                            cacheName !== STATIC_CACHE_NAME &&
+                        return cacheName !== STATIC_CACHE_NAME &&
                             cacheName !== DYNAMIC_CACHE_NAME;
                     }).map(function (cacheName) {
                         return caches.delete(cacheName);
