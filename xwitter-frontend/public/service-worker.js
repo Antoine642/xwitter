@@ -11,10 +11,10 @@ const APP_SHELL_FILES = [
     '/manifest.json',
     'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
     '/favicon.ico',
-    '/static/css/main.37c779ab.css',
-    '/static/css/main.37c779ab.css.map',
-    '/static/js/main.1eb774e9.js.map',
-    '/static/js/main.1eb774e9.js',
+    '/static/css/main.b7d45cd7.css',
+    '/static/css/main.b7d45cd7.css.map',
+    '/static/js/main.2e3f3a10.js.map',
+    '/static/js/main.2e3f3a10.js',
     '/static/js/592.f8361079.chunk.js',
     '/static/js/592.f8361079.chunk.js.map',
     '/idb.js'
@@ -86,7 +86,7 @@ self.addEventListener('sync', function (event) {
     if (event.tag === 'sync-new-messages') {
         idb.openDB('xwitter-messages', 1).then(function (database) {
             database.getAll('messages').then(function (messages) {
-                for(const message of messages) {
+                for (const message of messages) {
                     fetch(BACKEND_URL, {
                         method: 'POST',
                         headers: {
@@ -97,7 +97,7 @@ self.addEventListener('sync', function (event) {
                         if (response.ok) {
                             database.delete('messages', message.id);
                             console.log('Message sent:', message);
-                        }else{
+                        } else {
                             console.error('Failed to send message:', message);
                         }
                     });
@@ -111,8 +111,10 @@ self.addEventListener('push', function (event) {
     console.log('Push received:', event);
 
     const notificationData = event.data.json();
-    self.registration.showNotification(notificationData.title, {
-        body: notificationData.body,
-        icon: '/favicon.ico'
-    });
+    self.registration.showNotification(
+        notificationData.title,
+        {
+            body: notificationData.body,
+            icon: '/favicon.ico'
+        });
 });

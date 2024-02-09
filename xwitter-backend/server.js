@@ -56,24 +56,25 @@ app.post('/messages', async (req, res) => {
         res.json({ message: 'Message added successfully' });
 
         const rows = await Subscription.find();
-        console.log('Sending notifications to: ', rows);
         for (const subscription of rows) {
-            const serializedSubscription = JSON.stringify(subscription);
+            const serializedSubscription = subscription.toObject();
             // Notification = titre: nouveau post de 'name', corps: 'message'
             const notification = JSON.stringify({ title: 'Nouveau post de ' + name, body: message });
             console.log('Sending notification to: ', serializedSubscription);
             console.log('Notification: ', notification);
-            try {
-                await webpush.sendNotification(serializedSubscription, notification);
-            } catch (notificationError) {
+            webpush.sendNotification(serializedSubscription, notification).catch(async (notificationError) => {
                 if (notificationError.statusCode === 410 || notificationError.statusCode === 404) {
                     // Supprimer l'abonnement de la base de données
                     console.error('Subscription is no longer valid: ', notificationError.statusCode);
                     await Subscription.deleteOne({ _id: subscription._id }).exec();
+                }else{
+                    console.error('Error sending notification: ', notificationError);
                 }
             }
+            );
         }
     } catch (error) {
+        console.error('Error: ', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });
