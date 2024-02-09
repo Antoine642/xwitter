@@ -60,8 +60,8 @@ app.post('/messages', async (req, res) => {
             const serializedSubscription = subscription.toObject();
             // Notification = titre: nouveau post de 'name', corps: 'message'
             const notification = JSON.stringify({ title: 'Nouveau post de ' + name, body: message });
-            console.log('Sending notification to: ', serializedSubscription);
-            console.log('Notification: ', notification);
+            // console.log('Sending notification to: ', serializedSubscription);
+            // console.log('Notification: ', notification);
             webpush.sendNotification(serializedSubscription, notification).catch(async (notificationError) => {
                 if (notificationError.statusCode === 410 || notificationError.statusCode === 404) {
                     // Supprimer l'abonnement de la base de données
@@ -86,15 +86,6 @@ app.post('/subscriptions', async (req, res) => {
         const newSubscription = new Subscription(req.body);
         await newSubscription.save();
         res.json({ message: 'Subscription added successfully' });
-    } catch (error) {
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
-
-app.get('/subscriptions', async (req, res) => {
-    try {
-        const subscriptions = await Subscription.find();
-        res.json(subscriptions);
     } catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
