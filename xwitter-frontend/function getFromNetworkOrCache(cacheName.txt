@@ -1,0 +1,18 @@
+function getFromNetworkOrCache(cacheName, request){
+    return caches.open(cacheName).then(function (cache) {
+        return fetch(request).then(function (networkResponse) {
+            console.log('Network response for', request.url);
+            cache.put(request, networkResponse.clone());
+            return networkResponse;
+        }).catch(function (error) {
+            return cache.match(request).then(function (cacheResponse) {
+                if (cacheResponse) {
+                    console.log('Cache hit for', request.url);
+                    return cacheResponse;
+                } else {
+                    console.log('Cache miss for', request.url);
+                }
+            });
+        });
+    });
+}

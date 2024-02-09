@@ -1,9 +1,9 @@
 const STATIC_CACHE = 'xwitter-static';
 const DYNAMIC_CACHE = 'xwitter-dynamic';
+importScripts('/idb.js');
 
 const BACKEND_URL = 'http://localhost:5000/messages';
 
-// Liste des fichiers de l'application shell
 const APP_SHELL_FILES = [
     '/',
     '/service-worker.js',
@@ -16,7 +16,8 @@ const APP_SHELL_FILES = [
     '/static/js/main.1eb774e9.js.map',
     '/static/js/main.1eb774e9.js',
     '/static/js/592.f8361079.chunk.js',
-    '/static/js/592.f8361079.chunk.js.map'
+    '/static/js/592.f8361079.chunk.js.map',
+    '/idb.js'
 ];
 
 self.addEventListener('install', function (event) {
@@ -81,20 +82,37 @@ self.addEventListener('fetch', function (event) {
     );
 });
 
-self.addEventListener('online', function (event) {
-    console.log('Connection restored, processing pending messages...');
-    while (messageQueue.length > 0) {
-        const newMessage = messageQueue.shift();
-        fetch(BACKEND_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newMessage)
-        }).then(function (response) {
-            console.log('Message sent successfully:', newMessage);
-        }).catch(function (error) {
-            console.error('Failed to send message:', error);
+self.addEventListener('sync', function (event) {
+    if (event.tag === 'sync-new-messages') {
+        idb.openDB('xwitter-messages', 1).then(function (database) {
+            database.getAll('messages').then(function (messages) {
+                for(const message of messages) {
+                    fetch(BACKEND_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(message)
+                    }).then(function (response) {
+                        if (response.ok) {
+                            database.delete('messages', message.id);
+                            console.log('Message sent:', message);
+                        }else{
+                            console.error('Failed to send message:', message);
+                        }
+                    });
+                }
+            });
         });
     }
+});
+
+self.addEventListener('push', function (event) {
+    console.log('Push received:', event);
+
+    const notificationData = event.data.json();
+    self.registration.showNotification(notificationData.title, {
+        body: notificationData.body,
+        icon: '/favicon.ico'
+    });
 });
