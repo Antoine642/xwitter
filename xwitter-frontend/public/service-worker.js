@@ -115,6 +115,28 @@ self.addEventListener('push', function (event) {
         notificationData.title,
         {
             body: notificationData.body,
-            icon: '/favicon.ico'
+            icon: '/favicon.ico',
+            actions: [
+                {'title': 'Consulter', 'action': 'open'},
+                {'title': 'Ignorer', 'action': 'close'}
+            ]
         });
+});
+self.addEventListener('notificationclick', function (event) {
+    console.log('Notification click received:', event);
+    switch(event.action){
+        case 'close':
+            break;
+        case 'open':
+        default:
+            //si onglet ouvert, on le focus sinon on ouvre un nouvel onglet
+            event.waitUntil(clients.matchAll({type: 'window'}).then(function(clients){
+                if(clients.length){
+                    clients[0].focus();
+                }else{
+                    clients.openWindow('localhost:3000');
+                }
+            }));
+            break;
+    }
 });
